@@ -20,7 +20,7 @@ def insertion_sort(xs):
     return xs
 
 
-def merge(lhs, rhs):
+def merge(lhs, rhs, res):
     """Merges a pair of sorted lists.
 
     Args:
@@ -32,24 +32,16 @@ def merge(lhs, rhs):
     """
     rp = 0
     lp = 0
-    nl = []
 
-    while lp != len(lhs) and rp != len(rhs):
-        if (lhs[lp] < rhs[rp]):
-            nl.append(lhs[lp])
+    while lp + rp < len(res):
+        if rp == len(rhs) or (lp < len(lhs) and lhs[lp] < rhs[rp]):
+            res[lp + rp] = lhs[lp]
             lp += 1
-        elif (rhs[rp] <= lhs[lp]):
-            nl.append(rhs[rp])
+        else:
+            res[lp + rp] = rhs[rp]
             rp += 1
 
-    if (lp == len(lhs) and rp != len(rhs)):
-        for i in range(rp, len(rhs)):
-            nl.append(rhs[i])
-    if (rp == len(rhs) and lp != len(lhs)):
-        for i in range(lp, len(lhs)):
-            nl.append(lhs[i])
-
-    return nl
+    return res
 
 
 def merge_sort(xs):
@@ -62,7 +54,10 @@ def merge_sort(xs):
         The list in ascending order.
     """
     if (len(xs) == 1):
-        return [xs[0]]
+        return xs
 
     mid = len(xs) // 2
-    return merge(merge_sort(xs[:mid]), merge_sort(xs[mid:]))
+    s1 = merge_sort(xs[:mid])
+    s2 = merge_sort(xs[mid:])
+
+    return merge(s1, s2, xs)

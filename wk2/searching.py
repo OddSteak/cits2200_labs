@@ -34,37 +34,6 @@ def cube_root(x):
     return mid if neg is False else - mid
 
 
-def lower_bound(xs, x):
-    """Find the number of elements less than a value in a sorted list.
-
-    Args:
-        xs: A list sorted in ascending order.
-        x: The value to search for.
-
-    Returns:
-        The number of elements less than `x` in `xs`.
-    """
-    if (xs[0] >= x):
-        return 0
-    if (xs[len(xs) - 1] <= x):
-        return len(xs)
-
-    low = 0
-    high = len(xs)
-
-    while (low < high):
-        mid = (low + high) // 2
-
-        if (xs[mid] >= x):
-            high = mid
-
-        elif (xs[mid] < x):
-            if xs[mid + 1] >= x:
-                return mid + 1
-            else:
-                low = mid + 1
-
-
 def upper_bound(xs, x):
     """Find the number of elements less than or equal to a value in a sorted list.
 
@@ -91,6 +60,37 @@ def upper_bound(xs, x):
 
         elif (xs[mid] <= x):
             if xs[mid + 1] > x:
+                return mid + 1
+            else:
+                low = mid + 1
+
+
+def lower_bound(xs, x):
+    """Find the number of elements less than a value in a sorted list.
+
+    Args:
+        xs: A list sorted in ascending order.
+        x: The value to search for.
+
+    Returns:
+        The number of elements less than `x` in `xs`.
+    """
+    if (xs[0] >= x):
+        return 0
+    if (xs[len(xs) - 1] <= x):
+        return len(xs)
+
+    low = 0
+    high = len(xs)
+
+    while (low < high):
+        mid = (low + high) // 2
+
+        if (xs[mid] >= x):
+            high = mid
+
+        elif (xs[mid] < x):
+            if xs[mid + 1] >= x:
                 return mid + 1
             else:
                 low = mid + 1
