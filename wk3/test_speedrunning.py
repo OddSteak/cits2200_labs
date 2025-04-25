@@ -122,7 +122,7 @@ class TestSpeedrunning(unittest.TestCase):
             rank = board.get_possible_rank(time)
             nlt = sum(t < time for t, _ in runs)
             msg = f'get_possible_rank() gave {rank} but there are {nlt} runs faster than {time}'
-            self.assertEqual(rank, nlt+1, msg=msg)
+            self.assertEqual(rank, nlt + 1, msg=msg)
 
     def test_count_time(self):
         random = Random(SEED)

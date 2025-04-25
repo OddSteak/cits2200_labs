@@ -38,13 +38,28 @@ class Leaderboard:
             time: The run time in seconds.
             name: The runner's name.
         """
-        if ((time, name) <= self.data[0]):
-            self.data = [(time, name)] + self.data
+        if (self.data[0] > (time, name)):
+            self.data.insert(0, (time, name))
+            return
+        if (self.data[len(self.data) - 1] < (time, name)):
+            self.data.append((time, name))
+            return
 
-        for i in range(len(self.data) - 1, -1, -1):
-            if (self.data[i] < (time, name)):
-                self.data = self.data[:i + 1] + [(time, name)] + self.data[i + 1:]
-                break
+        low = 0
+        high = len(self.data)
+
+        while (low < high):
+            mid = (low + high) // 2
+
+            if (self.data[mid] > (time, name)):
+                high = mid
+
+            elif (self.data[mid] < (time, name)):
+                if self.data[mid + 1] > (time, name):
+                    self.data.insert(mid + 1, (time, name))
+                    return
+                else:
+                    low = mid + 1
 
     def get_rank_time(self, rank):
         """Get the time required to achieve at least a given rank.
@@ -71,12 +86,34 @@ class Leaderboard:
         Returns:
             The rank this run would be if it were to be submitted.
         """
-        if (time <= self.data[0][0]):
+        if (self.data[0][0] >= time):
             return 1
+        if (self.data[len(self.data) - 1][0] < time):
+            return len(self.data) + 1
 
-        for i in range(len(self.data) - 1, -1, -1):
-            if (self.data[i][0] < time):
-                return i + 2
+        low = 0
+        high = len(self.data)
+
+        while (low < high):
+            mid = (low + high) // 2
+
+            if (self.data[mid][0] > time):
+                high = mid
+
+            elif (self.data[mid][0] < time):
+                if self.data[mid + 1][0] >= time:
+                    return mid + 2
+                else:
+                    low = mid + 1
+
+            else:
+                rank = mid
+                for i in range(mid - 1, -1, -1):
+                    if (self.data[i][0] == time):
+                        rank = i
+                    else:
+                        break
+                return rank + 1
 
     def count_time(self, time):
         """Count the number of runs with the given time.
