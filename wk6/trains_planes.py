@@ -5,48 +5,55 @@ from __future__ import annotations
 from datetime import date
 
 
-class GraphNode:
-    def __init__(self, city: str):
-        self.city = city
-        self.edges: list[GraphEdge] = []
-
-    def addEdge(self, node: GraphNode, date: date) -> None:
-        """add an edge to the node."""
-        self.edges.append(GraphEdge(node, date))
-
-    def incident_edges(self, date: date | None) -> list[GraphEdge]:
-        """return the list of edges incident to this node before a specific date."""
-        if not date:
-            return self.edges
-        return [edge for edge in self.edges if edge.date <= date]
-
-
-class GraphEdge:
-    def __init__(self, node: GraphNode, date: date):
+class Transport:
+    def __init__(self, city1: str, city2: str, date: date):
+        self.city1 = city1
+        self.city2 = city2
         self.date = date
-        self.node = node
 
 
-class Graph:
-    def __init__(self):
-        self.nodes: list[GraphNode] = []
+class Train(Transport):
+    def __init__(self, city1: str, city2: str, date: date):
+        super().__init__(city1, city2, date)
 
-    def addNode(self, city: str) -> GraphNode:
-        """add a node to the graph with the given city and date."""
-        node: GraphNode = GraphNode(city)
-        self.nodes.append(node)
+
+class Plane(Transport):
+    def __init__(self, city1, city2, date, code):
+        super().__init__(city1, city2, date)
+        self.code = code
+
+
+class GraphNode:
+    def __init__(self, city: str, set: list[GraphNode]):
+        self.city = city
+        self.set = set
+
+
+class Partition:
+    def make_group(self, city: str):
+        """make a new group with a single city"""
+        new_set: list[GraphNode] = []
+        node = GraphNode(city, new_set)
+        new_set.append(node)
         return node
 
-    def getNodes(self) -> list[GraphNode]:
-        """return the list of nodes in the graph."""
-        return self.nodes
+    def find(self, node: GraphNode):
+        """find the representative of the group that contains the node"""
+        return node.set
 
-    def getCity(self, city: str) -> GraphNode | None:
-        """return the node with the given city, or None if it doesn't exist."""
-        for node in self.nodes:
-            if node.city == city:
-                return node
-        return None
+    def union(self, set1: list[GraphNode], set2: list[GraphNode]):
+        """merge two groups into one"""
+        smaller = set1
+        larger = set2
+        if len(set2) < len(set1):
+            smaller = set2
+            larger = set1
+
+        for node in smaller:
+            node.set = larger
+            larger.append(node)
+
+        return larger
 
 
 def trains_planes(
@@ -71,48 +78,48 @@ def trains_planes(
     Returns:
         A list of flights that could be replaced by a train journey.
     """
-    def dfs(
-        srcNode: GraphNode, destNode: GraphNode, visited: set[GraphNode], date: date
-    ) -> bool:
-        """Perform a depth-first search to find a path from srcNode to destNode."""
-        if srcNode == destNode:
-            return True
-        visited.add(srcNode)
-
-        for edge in srcNode.incident_edges(date):
-            if edge.node not in visited and dfs(edge.node, destNode, visited, date):
-                return True
-
-        return False
-
-    g: Graph = Graph()
+    # Create a list of all transport events, with trains and planes
+    list: list[Transport] = []
     replaceable: list[tuple[str, date, str, str]] = []
 
     for train in trains:
         date, city1, city2 = train
-        cityNodes: list[GraphNode] = []
-
-        for city in (city1, city2):
-            cityNode = g.getCity(city)
-            # add city if it doesn't exist in graph
-            if not cityNode:
-                cityNode = g.addNode(city)
-            cityNodes.append(cityNode)
-
-        for i in range(2):
-            cityNodes[i].addEdge(cityNodes[1 - i], date)
+        list.append(Train(city1, city2, date))
 
     for plane in planes:
-        _, date, depart, arrive = plane
-        departNode: GraphNode | None = g.getCity(depart)
-        arriveNode: GraphNode | None = g.getCity(arrive)
+        code, date, city1, city2 = plane
+        list.append(Plane(city1, city2, date, code))
 
-        if not departNode or not arriveNode:
-            continue
+    # Sort the list by date, with trains before planes on the same date
+    list.sort(key=lambda x: (x.date, 0 if isinstance(x, Train) else 1))
 
-        if dfs(departNode, arriveNode, set(), date):
-            replaceable.append(plane)
+    positions = {}  # map city to it's partition entry
+    forest = Partition()  # a forest of disjoint sets
+
+    for event in list:
+        if isinstance(event, Train):
+            for city in (event.city1, event.city2):
+                # If the city is not in positions, create a new group for it and add it to positions
+                if city not in positions:
+                    positions[city] = forest.make_group(city)
+
+            # Find the partitions of the two cities
+            a = forest.find(positions[event.city1])
+            b = forest.find(positions[event.city2])
+
+            # If the cities are not in the same partition, union them
+            if a != b:
+                forest.union(a, b)
+
+        elif isinstance(event, Plane):
+            # If either city is not in positions, skip this event
+            if event.city1 not in positions or event.city2 not in positions:
+                continue
+
+            # If both cities are in the same partition, add to replaceable
+            if forest.find(positions[event.city1]) == forest.find(
+                positions[event.city2]
+            ):
+                replaceable.append((event.code, event.date, event.city1, event.city2))
 
     return replaceable
-
-
