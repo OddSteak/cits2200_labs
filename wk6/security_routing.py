@@ -1,62 +1,16 @@
-# Name: YOUR NAME
-# Student Number: 23XXXXXX
+# Name: Baasil Siddiqui
+# Student Number: 23895849
 
-from enum import IntEnum
-import heapq
-
-
-class Clearance(IntEnum):
-    NONE = 0
-    RED = 1
-    BLUE = 2
-    GREEN = 3
-
-class AdaptableHeapPriorityQueue:
-    def __init__(self):
-        self._heap = []
-        self._locator = {}  # maps element to it's index
-        self._counter = 0
-
-    class _Item:
-        def __init__(self, key, count, value):
-            self.key = key
-            self.count = count
-            self.value = value
-
-        def __lt__(self, other):
-            return (self.key, self.count) < (other.key - other.count)
-
-    def add(self, key, value):
-        """add an element to the priority queue with a key and a value"""
-        item = self._Item(key, self._counter, value)
-        heapq.heappush(self._heap, item)
-        self._locator[value] = item
-        self._counter += 1
-        return value
-
-    def min(self):
-        """pop and return the minimum element from the pq heap"""
-        while self._heap:
-            item = self._heap[0]
-            if item.value in self._locator and self._locator[item.value] is item:
-                return (item.key, item.value)
-            heapq.heappop(self._heap)  # remove stale item
-
-        raise KeyError("Priority Queue is empty")
-
-    def remove(self, value):
-        """remove the element with the value"""
-        self._locator.pop(value)
-
-    def update(self, value, new_key):
-        """update the key of the element with value"""
-        if value not in self._locator:
-            raise ValueError("key not in priority queue")
-        self.remove(value)
-        self.add(new_key, value)
+from typing import Optional
+from adaptable_heap import AdaptableHeapPriorityQueue, Clearance
 
 
-def security_route(stations, segments, source, target):
+def security_route(
+    stations: list[Clearance],
+    segments: list[tuple[int, int, int, Clearance]],
+    source: int,
+    target: int,
+) -> Optional[int]:
     """Finds the fastest route from source station to target station.
 
     You start with no security clearance.
@@ -80,4 +34,41 @@ def security_route(stations, segments, source, target):
         The minimum length of time required to get from `source` to `target`, or
         `None` if no route exists.
     """
-    raise NotImplementedError("This function is not implemented yet.")
+    d: dict[int, tuple[int | float, Clearance]] = {}  # d[v] is upper bound from s to v
+    cloud: dict[int, tuple[int | float, Clearance]] = {}  # map v to it's d[v] value
+    pq = AdaptableHeapPriorityQueue()
+
+    for v in range(len(stations)):
+        if v == source:
+            d[v] = (0, stations[v])
+        else:
+            d[v] = (float("inf"), stations[v])
+
+        pq.add(d[v][0], v, stations[v])
+
+    for segment in segments:
+        u, v, t, cs = segment
+
+        node_u = pq.getItem(u)
+        node_v = pq.getItem(v)
+        node_u.addEdge(node_v, t, cs)
+        node_v.addEdge(node_u, t, cs)
+
+    while not pq.isEmpty():
+        item = pq.min()
+        cloud[item.value] = d[item.value]
+
+        for e in item.incidentEdges(cloud[item.value][1]):
+            neighbour = e.node
+            if neighbour.value not in cloud:
+                new_d = (
+                    cloud[item.value][0] + e.time,
+                    max(cloud[item.value][1], neighbour.clearance),
+                )
+                if (new_d[0], -new_d[1]) < (d[neighbour.value][0], -d[neighbour.value][1]):
+                    d[neighbour.value] = new_d
+                    pq.update(neighbour.value, int(new_d[0]))
+
+        pq.restoreHeap()
+
+    return int(cloud[target][0])
