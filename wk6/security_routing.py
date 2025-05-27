@@ -2,7 +2,7 @@
 # Student Number: 23895849
 
 from typing import Optional
-from adaptable_heap import AdaptableHeapPriorityQueue, Clearance
+from adaptable_heap import AdaptableHeapPriorityQueue, Clearance, Node, Edge
 
 
 def security_route(
@@ -36,7 +36,7 @@ def security_route(
     """
     d: dict[int, tuple[int | float, Clearance]] = {}  # d[v] is upper bound from s to v
     cloud: dict[int, tuple[int | float, Clearance]] = {}  # map v to it's d[v] value
-    pq = AdaptableHeapPriorityQueue()
+    pq: AdaptableHeapPriorityQueue = AdaptableHeapPriorityQueue()
 
     for v in range(len(stations)):
         if v == source:
@@ -49,24 +49,31 @@ def security_route(
     for segment in segments:
         u, v, t, cs = segment
 
-        node_u = pq.getItem(u)
-        node_v = pq.getItem(v)
+        node_u: Node = pq.getItem(u)
+        node_v: Node = pq.getItem(v)
         node_u.addEdge(node_v, t, cs)
         node_v.addEdge(node_u, t, cs)
 
     while not pq.isEmpty():
-        item = pq.min()
+        item: Node = pq.min()
         cloud[item.value] = d[item.value]
+        key, clearance = cloud[item.value]
+        print(f"edges of {item.value}, {clearance}==========================")
 
-        for e in item.incidentEdges(cloud[item.value][1]):
-            neighbour = e.node
-            if neighbour.value not in cloud:
-                new_d = (
-                    cloud[item.value][0] + e.time,
-                    max(cloud[item.value][1], neighbour.clearance),
-                )
-                if (new_d[0], -new_d[1]) < (d[neighbour.value][0], -d[neighbour.value][1]):
-                    d[neighbour.value] = new_d
+        for e in item.incidentEdges(clearance):
+            neighbour: Node = e.node
+            new_d: tuple[float | int, Clearance] = (
+                key + e.time,
+                max(clearance, neighbour.clearance),
+            )
+            if new_d[0] < d[neighbour.value][0] or new_d[1] > d[neighbour.value][1]:
+                d[neighbour.value] = new_d
+                if neighbour.value in cloud:
+                    print(f"removing {neighbour.value} from cloud with t: {new_d[0]} c: {new_d[1]}")
+                    pq.add(int(new_d[0]), neighbour.value, new_d[1])
+                    del cloud[neighbour.value]
+                else:
+                    print(f"updating {neighbour.value} to t: {new_d[0]} c: {new_d[1]}")
                     pq.update(neighbour.value, int(new_d[0]))
 
         pq.restoreHeap()
