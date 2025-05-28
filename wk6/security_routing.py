@@ -34,7 +34,9 @@ def security_route(
         The minimum length of time required to get from `source` to `target`, or
         `None` if no route exists.
     """
-    d: dict[int, dict[Clearance, int | float]] = {}  # d[v][clearance] is upper bound from s to v
+    d: dict[
+        int, dict[Clearance, int | float]
+    ] = {}  # d[v][clearance] is upper bound from s to v
     cloud: dict[int, dict[Clearance, int | float]] = {}  # map v to it's d[v] value
     g: Graph = Graph()
     pq: AdaptableHeapPriorityQueue = AdaptableHeapPriorityQueue()
@@ -50,10 +52,8 @@ def security_route(
         pq.add(d[v][stations[v]], v, stations[v])
         g.addNode(v)
 
-    for segment in segments:
-        u, v, t, cs = segment
 
-        g.addEdge(u, v, t, cs)
+    [g.addEdge(u, v, t, cs) for u, v, t, cs in segments]
 
     while not pq.isEmpty():
         item: Node = pq.min()
@@ -72,18 +72,12 @@ def security_route(
                 time + e.time,
                 max(clearance, stations[e.station]),
             )
-            # if this cleaarance has not been seen before
-            if new_d[1] not in d[e.station]:
-                print(f"adding {e.station} to d with t: {new_d[0]} c: {new_d[1]}")
-                d[e.station][new_d[1]] = new_d[0]
-                pq.add(new_d[0], e.station, new_d[1])
 
-            elif new_d[0] < d[e.station][new_d[1]]:
-                d[e.station][new_d[1]] = new_d[0]
+            if new_d[0] < d[e.station].get(new_d[1], float("inf")):
                 print(f"updating {e.station} to t: {new_d[0]} c: {new_d[1]}")
+                d[e.station][new_d[1]] = new_d[0]
                 pq.update(e.station, new_d[1], int(new_d[0]))
 
         pq.restoreHeap()
 
     return None
-

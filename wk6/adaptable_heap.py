@@ -18,7 +18,9 @@ class Edge:
 
 
 class Node:
-    def __init__(self, time: int | float, count: int, station: int, clearance: Clearance) -> None:
+    def __init__(
+        self, time: int | float, count: int, station: int, clearance: Clearance
+    ) -> None:
         self.station = station
         self.time = time
         self.clearance = clearance
@@ -33,26 +35,29 @@ class Node:
             other.count,
         )
 
+
 class Graph:
     """A graph representation with adjacency list."""
+
     def __init__(self):
         self.adj: list[list[Edge]] = []
         self._counter: int = 0
 
-    def addNode(self, station: int):
+    def addNode(self, station: int) -> None:
         """add a node to the graph."""
         if station != len(self.adj):
-            raise ValueError(f"Station {station} does not match the current number of nodes {len(self.adj)}")
+            raise ValueError(
+                f"Station {station} does not match the current number of nodes {len(self.adj)}"
+            )
         self.adj.append([])
 
-    def addEdge(self, u: int, v: int, time: int, clearance: Clearance):
+    def addEdge(self, u: int, v: int, time: int, clearance: Clearance) -> None:
         """add an edge from u to v with time and clearance."""
         if v >= len(self.adj) or u >= len(self.adj):
             raise ValueError(f"{u} or {v} station not in graph")
 
-        if v not in self.adj[u] or u not in self.adj[v]:
+        if v not in self.adj[u]:
             self.adj[u].append(Edge(v, time, clearance))
-            self.adj[v].append(Edge(u, time, clearance))
 
     def incidentEdges(self, station: int, clearance: Clearance) -> list[Edge]:
         """Return the list of incident edges from station below clearance."""
@@ -65,7 +70,9 @@ class Graph:
 class AdaptableHeapPriorityQueue:
     def __init__(self) -> None:
         self._heap: list[Node] = []
-        self._locator: dict[int, dict[Clearance, Node]] = {}  # maps element to it's index
+        self._locator: dict[
+            int, dict[Clearance, Node]
+        ] = {}  # maps element to it's index
         self._counter: int = 0
 
     def add(self, time: int | float, station: int, clearance: Clearance) -> int:
