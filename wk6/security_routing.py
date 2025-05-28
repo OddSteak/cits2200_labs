@@ -2,7 +2,7 @@
 # Student Number: 23895849
 
 from typing import Optional
-from adaptable_heap import AdaptableHeapPriorityQueue, Clearance, Node, Edge
+from adaptable_heap import AdaptableHeapPriorityQueue, Clearance, Node, Edge, Graph
 
 
 def security_route(
@@ -34,48 +34,56 @@ def security_route(
         The minimum length of time required to get from `source` to `target`, or
         `None` if no route exists.
     """
-    d: dict[int, tuple[int | float, Clearance]] = {}  # d[v] is upper bound from s to v
-    cloud: dict[int, tuple[int | float, Clearance]] = {}  # map v to it's d[v] value
+    d: dict[int, dict[Clearance, int | float]] = {}  # d[v][clearance] is upper bound from s to v
+    cloud: dict[int, dict[Clearance, int | float]] = {}  # map v to it's d[v] value
+    g: Graph = Graph()
     pq: AdaptableHeapPriorityQueue = AdaptableHeapPriorityQueue()
 
     for v in range(len(stations)):
-        if v == source:
-            d[v] = (0, stations[v])
-        else:
-            d[v] = (float("inf"), stations[v])
+        d[v] = {}
 
-        pq.add(d[v][0], v, stations[v])
+        if v == source:
+            d[v][stations[v]] = 0
+        else:
+            d[v][stations[v]] = float("inf")
+
+        pq.add(d[v][stations[v]], v, stations[v])
+        g.addNode(v)
 
     for segment in segments:
         u, v, t, cs = segment
 
-        node_u: Node = pq.getItem(u)
-        node_v: Node = pq.getItem(v)
-        node_u.addEdge(node_v, t, cs)
-        node_v.addEdge(node_u, t, cs)
+        g.addEdge(u, v, t, cs)
 
     while not pq.isEmpty():
         item: Node = pq.min()
-        cloud[item.value] = d[item.value]
-        key, clearance = cloud[item.value]
-        print(f"edges of {item.value}, {clearance}==========================")
+        if item.station not in cloud:
+            cloud[item.station] = {}
 
-        for e in item.incidentEdges(clearance):
-            neighbour: Node = e.node
+        cloud[item.station][item.clearance] = d[item.station][item.clearance]
+        time, clearance = cloud[item.station][item.clearance], item.clearance
+        print(f"edges of {item.station}, {clearance}==========================")
+
+        if item.station == target:
+            return int(time)
+
+        for e in g.incidentEdges(item.station, clearance):
             new_d: tuple[float | int, Clearance] = (
-                key + e.time,
-                max(clearance, neighbour.clearance),
+                time + e.time,
+                max(clearance, stations[e.station]),
             )
-            if new_d[0] < d[neighbour.value][0] or new_d[1] > d[neighbour.value][1]:
-                d[neighbour.value] = new_d
-                if neighbour.value in cloud:
-                    print(f"removing {neighbour.value} from cloud with t: {new_d[0]} c: {new_d[1]}")
-                    pq.add(int(new_d[0]), neighbour.value, new_d[1])
-                    del cloud[neighbour.value]
-                else:
-                    print(f"updating {neighbour.value} to t: {new_d[0]} c: {new_d[1]}")
-                    pq.update(neighbour.value, int(new_d[0]))
+            # if this cleaarance has not been seen before
+            if new_d[1] not in d[e.station]:
+                print(f"adding {e.station} to d with t: {new_d[0]} c: {new_d[1]}")
+                d[e.station][new_d[1]] = new_d[0]
+                pq.add(new_d[0], e.station, new_d[1])
+
+            elif new_d[0] < d[e.station][new_d[1]]:
+                d[e.station][new_d[1]] = new_d[0]
+                print(f"updating {e.station} to t: {new_d[0]} c: {new_d[1]}")
+                pq.update(e.station, new_d[1], int(new_d[0]))
 
         pq.restoreHeap()
 
-    return int(cloud[target][0])
+    return None
+
