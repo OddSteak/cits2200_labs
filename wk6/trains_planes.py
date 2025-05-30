@@ -30,21 +30,21 @@ class GraphNode:
 
 
 class Partition:
-    def make_group(self, city: str):
+    def make_group(self, city: str) -> GraphNode:
         """make a new group with a single city"""
         new_set: list[GraphNode] = []
-        node = GraphNode(city, new_set)
+        node: GraphNode = GraphNode(city, new_set)
         new_set.append(node)
         return node
 
-    def find(self, node: GraphNode):
+    def find(self, node: GraphNode) -> list[GraphNode]:
         """find the representative of the group that contains the node"""
         return node.set
 
-    def union(self, set1: list[GraphNode], set2: list[GraphNode]):
+    def union(self, set1: list[GraphNode], set2: list[GraphNode]) -> list[GraphNode]:
         """merge two groups into one"""
-        smaller = set1
-        larger = set2
+        smaller: list[GraphNode] = set1
+        larger: list[GraphNode] = set2
         if len(set2) < len(set1):
             smaller = set2
             larger = set1
@@ -93,8 +93,8 @@ def trains_planes(
     # Sort the list by date, with trains before planes on the same date
     list.sort(key=lambda x: (x.date, 0 if isinstance(x, Train) else 1))
 
-    positions = {}  # map city to it's partition entry
-    forest = Partition()  # a forest of disjoint sets
+    positions: dict[str, GraphNode] = {}  # map city to it's partition entry
+    forest: Partition = Partition()  # a forest of disjoint sets
 
     for event in list:
         if isinstance(event, Train):
@@ -104,8 +104,8 @@ def trains_planes(
                     positions[city] = forest.make_group(city)
 
             # Find the partitions of the two cities
-            a = forest.find(positions[event.city1])
-            b = forest.find(positions[event.city2])
+            a: list[GraphNode] = forest.find(positions[event.city1])
+            b: list[GraphNode] = forest.find(positions[event.city2])
 
             # If the cities are not in the same partition, union them
             if a != b:

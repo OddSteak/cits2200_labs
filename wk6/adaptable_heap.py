@@ -63,7 +63,7 @@ class Graph:
         if station >= len(self.adj):
             raise ValueError(f"{station} not in graph")
 
-        return [edge for edge in self.adj[station] if edge.clearance <= clearance]
+        return [edge for edge in self.adj[station] if edge.clearance == clearance or edge.clearance == Clearance.NONE]
 
 
 class AdaptableHeapPriorityQueue:

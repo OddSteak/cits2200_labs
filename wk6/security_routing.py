@@ -57,26 +57,24 @@ def security_route(
     while not pq.isEmpty():
         item: Node = pq.min()
         if item.station not in cloud:
-            cloud[item.station] = {}
+            cloud[item.station] = {} # type: ignore
 
-        cloud[item.station][item.clearance] = d[item.station][item.clearance]
+        cloud[item.station][item.clearance] = d[item.station].get(item.clearance, float("inf")) # type: ignore
         time, clearance = cloud[item.station][item.clearance], item.clearance
-        print(f"edges of {item.station}, {clearance}==========================")
-
-        if item.station == target:
-            return int(time)
 
         for e in g.incidentEdges(item.station, clearance):
-            new_d: tuple[float | int, Clearance] = (
-                time + e.time,
-                max(clearance, stations[e.station]),
-            )
+            new_time: int | float = time + e.time
 
-            if new_d[0] < d[e.station].get(new_d[1], float("inf")):
-                print(f"updating {e.station} to t: {new_d[0]} c: {new_d[1]}")
-                d[e.station][new_d[1]] = new_d[0]
-                pq.update(e.station, new_d[1], int(new_d[0]))
+            for cl in (clearance, stations[e.station]):
+                if new_time < d[e.station].get(cl, float("inf")):
+                    d[e.station][cl] = new_time
+                    pq.update(e.station, cl, int(new_time))
 
         pq.restoreHeap()
 
-    return None
+    if target not in cloud:
+        return None
+
+    min_time = min(cloud[target].values())
+    return int(min_time) if min_time != float("inf") else None
+
