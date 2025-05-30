@@ -25,7 +25,6 @@ class Node:
         self.time = time
         self.clearance = clearance
         self.count = count
-        self.edges: list[Edge] = []
 
     def __lt__(self, other: Node) -> bool:
         """Compare items based on their key and count."""

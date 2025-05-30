@@ -52,7 +52,6 @@ def security_route(
         pq.add(d[v][stations[v]], v, stations[v])
         g.addNode(v)
 
-
     [g.addEdge(u, v, t, cs) for u, v, t, cs in segments]
 
     while not pq.isEmpty():
