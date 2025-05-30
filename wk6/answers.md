@@ -58,10 +58,26 @@ See `security_routing.py`.
 ## Question 2 (1 mark)
 Give an argument for the correctness of your `security_route()` function.
 
-YOUR ANSWER HERE
+The `security_route()` function is correct because it models the problem as a shortest-path search where each state is defined by both the current station and the current security clearance. This is necessary because the ability to traverse a segment depends on the clearance held at that moment, and clearances can be changed at certain stations.
+
+The function uses a modified Dijkstra's algorithm. At each step, it considers all possible actions: moving along a segment if the required clearance is held, and optionally changing clearance at a station if that station offers a new clearance. 
+
+By always expanding the state with the lowest current time and updating the shortest known time to reach each (station, clearance) pair, the algorithm ensures that no shorter path is missed.
+
+The function continues until all reachable states have been processed, and finally returns the minimum time to reach the target station with any clearance. 
+
+If the target is unreachable, it returns `None`. This approach guarantees that the minimum possible time is found, as all valid paths and clearance changes are considered, and the priority queue ensures optimal states are always expanded first.
 
 
 ## Question 3 (1 mark)
 Give an argument for the complexity of your `security_route()` function.
 
-YOUR ANSWER HERE
+The `security_route()` function achieves the target complexity of O(N log N), where N is the total number of stations plus segments. This is because it uses a modified Dijkstra's algorithm with a priority queue to always expand the shortest-time state next. 
+
+Each state is a (station, clearance) pair, and there are at most a constant number of clearances per station, so the total number of states is O(|stations|).
+
+For each state, the algorithm may examine all outgoing segments (edges), so the total number of edge relaxations is O(|segments|). 
+
+Each priority queue operation (add, update, pop) takes O(log N) time, and there are O(N) such operations in total. 
+
+Thus, the overall time complexity is O((|stations| + |segments|) log N), which meets the required bound.
